@@ -1,0 +1,21 @@
+{
+  "name": "es-migration",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile_es6": "./node_modules/.bin/babel ./src --out-dir ./dist && echo \"require('./dist');\" > index.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "args-parser": "^1.1.0",
+    "async": "^2.5.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "es": "^0.6.0",
+    "progress": "^2.0.0",
+    "request": "^2.83.0"
+  }
+}
