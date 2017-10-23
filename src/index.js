@@ -29,45 +29,38 @@ const __done = (err) => {
     console.log('DONE');
 }
 
-const pr = new Process(args);
-// TODO multi automatically
-// TODO different versions of elastic search
-if (!args.multi) {
-    __start(pr, __done);
-} else {
-    request.get({
-        url: `http://${pr.src.uri}/${pr.srcIndex}/_aliases`,
-        gzip: true,
-        json: true
-    }, (err, res, body) => {
-        if (err) {
-            __error(err);
-            return;
-        }
-        const indexes = Object.keys(body);
-        async.eachSeries(Object.keys(body), (index, callback) => {
-            const p = new Process({
-                src: pr.src.uri,
-                dest: pr.dest.uri,
-                srcIndex: index,
-                destIndex: index
-            });
-            __start(p, callback);
-        }, __done);
-    });
+if (!args.src) {
+    throw new Error('No source database defined');
 }
 
-/*
-var i = 0, steps = [0.1, 0.25, 0.6, 0.8, 0.4, 0.5, 0.6, 0.2, 0.8, 1.0];
+if (!args.srcIndex) {
+    throw new Error('No source index defined');
+}
 
-(function next() {
-  if (i >= steps.length) {
-  } else {
-    bar.update(Math.random());
-    setTimeout(next, 500);
-  }
-})();
-/*
+// TODO different versions of elastic search
+// TODO npm cli
 
-const bar = new Progress(':bar');
-p.start((progress) => bar.tick(progress), (err) => console.error(err));*/
+request.get({
+    url: `http://${args.src}/${args.srcIndex}/_aliases`,
+    gzip: true,
+    json: true
+}, (err, res, body) => {
+    if (err) {
+        __error(err);
+        return;
+    }
+    const indexes = Object.keys(body);
+    async.eachSeries(Object.keys(body), (index, callback) => {
+        const p = new Process({
+            src: args.src,
+            dest: args.dest || args.src,
+            srcIndex: index,
+            postfix: args.postfix,
+            clear: args.clear,
+            size: args.size,
+            commands: args.commands,
+            prefix: args.prefix
+        });
+        __start(p, callback);
+    }, __done);
+});

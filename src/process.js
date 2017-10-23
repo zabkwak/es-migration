@@ -179,7 +179,7 @@ export default class Process {
         return sum / count;
     }
     _init(args) {
-        let { src, dest, srcIndex, destIndex, size, commands, clear } = args;
+        let { src, dest, srcIndex, size, commands, postfix, prefix, clear } = args;
         if (!src) {
             throw new Error('No source database defined');
         }
@@ -189,12 +189,9 @@ export default class Process {
         }
 
         if (!dest) {
-            dest = 'localhost:9200';
+            dest = src;
         }
 
-        if (!destIndex) {
-            destIndex = srcIndex;
-        }
         if (!size) {
             size = SIZE;
         }
@@ -204,7 +201,7 @@ export default class Process {
         this.src = this._parse(src);
         this.dest = this._parse(dest);
         this.srcIndex = srcIndex;
-        this.destIndex = destIndex;
+        this.destIndex = `${prefix ? `${prefix}-` : ''}${srcIndex}${postfix ? `-${postfix}` : ''}`;
         this.size = size;
         this.commands = commands;
         this.clear = Boolean(clear);
