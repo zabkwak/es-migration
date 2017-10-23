@@ -31,6 +31,7 @@ const __done = (err) => {
 
 const pr = new Process(args);
 // TODO multi automatically
+// TODO different versions of elastic search
 if (!args.multi) {
     __start(pr, __done);
 } else {
