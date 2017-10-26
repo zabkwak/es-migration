@@ -6,20 +6,30 @@ const SIZE = 1000;
 const COMMANDS = 100;
 
 export default class Process {
-    constructor(args) {
-        this._init(args);
+    constructor(options) {
+        this._init(options);
         this.es = {
             src: es.createClient({ server: this.src }),
             dest: es.createClient({ server: this.dest })
         }
     }
-    start(onProgress, onFinish) {
+    start(onUpdate, onProgress, onFinish) {
         if (this.srcIndex.indexOf('*') >= 0) {
+            // This shouldn't happened
             throw new Error('Cannot migrate multiple indexes. Use --multi command.');
+        }
+        if (!onFinish && !onProgress) {
+            onFinish = onUpdate;
+            onUpdate = null;
+            onProgress = null;
         }
         if (!onFinish) {
             onFinish = onProgress;
-            onProgress = null;
+            onProgress = onUpdate;
+            onUpdate = null;
+        }
+        if (typeof onUpdate !== 'function') {
+            onUpdate = (d) => d;
         }
         if (typeof onProgress !== 'function') {
             onProgress = () => { };
@@ -37,7 +47,7 @@ export default class Process {
                     onFinish(err);
                     return;
                 }
-                this._reindex(onProgress, onFinish);
+                this._reindex(onUpdate, onProgress, onFinish);
             })
         });
 
@@ -93,7 +103,7 @@ export default class Process {
         });
     }
 
-    _reindex(onProgress, onFinish) {
+    _reindex(onUpdate, onProgress, onFinish) {
         const map = {
             search: 0
         };
@@ -122,7 +132,7 @@ export default class Process {
                 }
                 const hits = data.hits.hits;
                 done += hits.length;
-                this._index(hits, ((progress) => { }), (err) => {
+                this._index(hits, onUpdate, ((progress) => { }), (err) => {
                     if (err) {
                         onFinish(err);
                         return;
@@ -140,13 +150,13 @@ export default class Process {
         });
     }
 
-    _index(data, onProgress, onFinish) {
+    _index(data, onUpdate, onProgress, onFinish) {
         const bulk = [];
         while (data.length > 0) {
             const commands = [];
             const spliced = data.splice(0, this.commands);
             for (let i = 0; i < spliced.length; i++) {
-                const d = spliced[i];
+                const d = onUpdate(spliced[i]);
                 commands.push({ index: { _index: this.destIndex, _type: d._type, _id: d._id } });
                 commands.push(d._source);
             }
@@ -178,8 +188,8 @@ export default class Process {
         }
         return sum / count;
     }
-    _init(args) {
-        let { src, dest, srcIndex, size, commands, postfix, prefix, clear } = args;
+    _init(options) {
+        let { src, dest, srcIndex, size, commands, postfix, prefix, clear } = options;
         if (!src) {
             throw new Error('No source database defined');
         }
@@ -197,6 +207,9 @@ export default class Process {
         }
         if (!commands) {
             commands = COMMANDS;
+        }
+        if (clear && dest === src && !prefix && !postfix) {
+            throw new Error('You cannot clear the source. Use prefix or postfix to set index name.');
         }
         this.src = this._parse(src);
         this.dest = this._parse(dest);

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile_es6": "./node_modules/.bin/babel ./src --out-dir ./dist && echo \"require('./dist');\" > index.js"
+    "compile_es6": "./node_modules/.bin/babel ./src --out-dir ./dist && echo \"module.exports = require('./dist');\" > index.js"
   },
   "author": "",
   "license": "MIT",
